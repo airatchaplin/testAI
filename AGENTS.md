@@ -5,7 +5,7 @@
 Проект следует многослойной архитектуре (Controller → Service → Repository), чистоте кода, принципам REST и best practices Spring Boot.
 
 ## 🧠 Стек технологий
-- **Java 21+**
+- **Java 22+**
 - **Spring Boot**
 - **Spring Data JPA / Hibernate**
 - **PostgreSQL** (основная БД)
