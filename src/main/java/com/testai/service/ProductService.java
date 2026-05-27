@@ -12,6 +12,18 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+/**
+ * Сервис для управления товарами.
+ * <p>
+ * Содержит бизнес-логику CRUD-операций: получение списка товаров,
+ * поиск по ID, создание, обновление и удаление. Все публичные методы
+ * логируют вход и выход для упрощения отладки и мониторинга.
+ * </p>
+ *
+ * @see ProductController
+ * @see ProductRepository
+ * @see ProductMapper
+ */
 @Service
 public class ProductService {
 
@@ -20,11 +32,22 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final ProductMapper productMapper;
 
+    /**
+     * Конструктор с внедрением зависимостей.
+     *
+     * @param productRepository репозиторий для работы с товарами
+     * @param productMapper     маппер для преобразования Entity ↔ DTO
+     */
     public ProductService(ProductRepository productRepository, ProductMapper productMapper) {
         this.productRepository = productRepository;
         this.productMapper = productMapper;
     }
 
+    /**
+     * Возвращает список всех товаров.
+     *
+     * @return список DTO всех товаров (может быть пустым)
+     */
     @Transactional(readOnly = true)
     public List<ProductDto> findAll() {
         log.info("→ findAll started");
@@ -41,6 +64,13 @@ public class ProductService {
         }
     }
 
+    /**
+     * Возвращает товар по его идентификатору.
+     *
+     * @param id идентификатор товара (не может быть {@code null})
+     * @return DTO найденного товара
+     * @throws ResourceNotFoundException если товар с указанным ID не найден
+     */
     @Transactional(readOnly = true)
     public ProductDto findById(Long id) {
         log.info("→ findById started - id={}", id);
@@ -56,6 +86,12 @@ public class ProductService {
         }
     }
 
+    /**
+     * Создаёт новый товар.
+     *
+     * @param dto DTO с данными нового товара (наименование, описание, цена)
+     * @return DTO созданного товара с присвоенным ID
+     */
     @Transactional
     public ProductDto create(ProductDto dto) {
         log.info("→ create started - dto={}", dto);
@@ -71,6 +107,17 @@ public class ProductService {
         }
     }
 
+    /**
+     * Обновляет существующий товар.
+     * <p>
+     * Находит товар по ID, обновляет его поля и сохраняет изменения.
+     * </p>
+     *
+     * @param id  идентификатор обновляемого товара
+     * @param dto DTO с новыми данными товара
+     * @return DTO обновлённого товара
+     * @throws ResourceNotFoundException если товар с указанным ID не найден
+     */
     @Transactional
     public ProductDto update(Long id, ProductDto dto) {
         log.info("→ update started - id={}, dto={}", id, dto);
@@ -90,6 +137,12 @@ public class ProductService {
         }
     }
 
+    /**
+     * Удаляет товар по его идентификатору.
+     *
+     * @param id идентификатор удаляемого товара
+     * @throws ResourceNotFoundException если товар с указанным ID не найден
+     */
     @Transactional
     public void delete(Long id) {
         log.info("→ delete started - id={}", id);

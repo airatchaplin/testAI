@@ -1,0 +1,279 @@
+openapi: "3.0.3"
+info:
+  title: "testAI — Product Management API"
+  description: |
+    REST API для управления каталогом товаров.
+
+    Предоставляет полный набор CRUD-операций: получение списка товаров,
+    просмотр деталей, создание, обновление и удаление.
+
+    ## Технологии
+    - Java 22, Spring Boot 3.4.4
+    - PostgreSQL, Liquibase
+    - SpringDoc OpenAPI 2.8.6
+
+    ## Формат ошибок
+    Все ошибки возвращаются в едином формате:
+    ```json
+    {
+      "timestamp": "2026-05-27T12:00:00",
+      "status": 404,
+      "error": "Product not found with id: 99"
+    }
+    ```
+
+    Ошибки валидации (400 Bad Request) содержат поле `errors`:
+    ```json
+    {
+      "timestamp": "2026-05-27T12:00:00",
+      "status": 400,
+      "errors": {
+        "name": "Name is required",
+        "price": "Price must be positive or zero"
+      }
+    }
+    ```
+  version: "1.0.0"
+  contact:
+    name: "testAI Project"
+
+servers:
+  - url: "http://localhost:8080"
+    description: "Локальный сервер разработки"
+
+paths:
+  /api/products:
+    get:
+      tags:
+        - "Товары (Products)"
+      summary: "Получить список всех товаров"
+      description: "Возвращает массив всех товаров в каталоге. Может быть пустым."
+      operationId: "getAllProducts"
+      responses:
+        "200":
+          description: "Успешный ответ. Список товаров."
+          content:
+            application/json:
+              schema:
+                type: "array"
+                items:
+                  $ref: "#/components/schemas/ProductDto"
+
+    post:
+      tags:
+        - "Товары (Products)"
+      summary: "Создать новый товар"
+      description: "Добавляет новый товар в каталог. Валидация обязательных полей выполняется автоматически."
+      operationId: "createProduct"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductDtoCreate"
+      responses:
+        "201":
+          description: "Товар успешно создан. Возвращает данные товара с присвоенным ID."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductDto"
+        "400":
+          description: "Ошибка валидации. Неправильные или отсутствующие поля."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
+
+  /api/products/{id}:
+    get:
+      tags:
+        - "Товары (Products)"
+      summary: "Получить товар по ID"
+      description: "Возвращает детальную информацию о товаре по его уникальному идентификатору."
+      operationId: "getProductById"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          description: "Идентификатор товара"
+          schema:
+            type: "integer"
+            format: "int64"
+            minimum: 1
+            example: 1
+      responses:
+        "200":
+          description: "Товар найден. Возвращает данные товара."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductDto"
+        "404":
+          description: "Товар с указанным ID не найден."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    put:
+      tags:
+        - "Товары (Products)"
+      summary: "Обновить существующий товар"
+      description: "Полностью обновляет данные товара по его идентификатору. Все поля обязательны (кроме description)."
+      operationId: "updateProduct"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          description: "Идентификатор обновляемого товара"
+          schema:
+            type: "integer"
+            format: "int64"
+            minimum: 1
+            example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductDtoCreate"
+      responses:
+        "200":
+          description: "Товар успешно обновлён."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductDto"
+        "400":
+          description: "Ошибка валидации. Неправильные или отсутствующие поля."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
+        "404":
+          description: "Товар с указанным ID не найден."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    delete:
+      tags:
+        - "Товары (Products)"
+      summary: "Удалить товар"
+      description: "Удаляет товар по его идентификатору. После успешного удаления тело ответа отсутствует."
+      operationId: "deleteProduct"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          description: "Идентификатор удаляемого товара"
+          schema:
+            type: "integer"
+            format: "int64"
+            minimum: 1
+            example: 1
+      responses:
+        "204":
+          description: "Товар успешно удалён. Тело ответа отсутствует."
+        "404":
+          description: "Товар с указанным ID не найден."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  schemas:
+    ProductDto:
+      description: "DTO товара. Возвращается при GET-запросах и после создания/обновления."
+      type: "object"
+      properties:
+        id:
+          type: "integer"
+          format: "int64"
+          description: "Уникальный идентификатор товара (автогенерируемый)"
+          example: 1
+        name:
+          type: "string"
+          description: "Наименование товара"
+          example: "Смартфон"
+        description:
+          type: "string"
+          description: "Описание товара"
+          nullable: true
+          example: "Современный смартфон с отличной камерой"
+        price:
+          type: "number"
+          format: "double"
+          description: "Цена товара (≥ 0)"
+          example: 59999.99
+
+    ProductDtoCreate:
+      description: "DTO для создания/обновления товара. Не содержит ID (назначается сервером)."
+      type: "object"
+      required:
+        - "name"
+      properties:
+        name:
+          type: "string"
+          description: "Наименование товара. Обязательное поле."
+          example: "Смартфон"
+        description:
+          type: "string"
+          description: "Описание товара. Необязательное поле."
+          nullable: true
+          example: "Современный смартфон с отличной камерой"
+        price:
+          type: "number"
+          format: "double"
+          description: "Цена товара. Должна быть ≥ 0. Необязательное поле (по умолчанию null)."
+          minimum: 0
+          example: 59999.99
+
+    ErrorResponse:
+      description: "Стандартный ответ с ошибкой."
+      type: "object"
+      properties:
+        timestamp:
+          type: "string"
+          format: "date-time"
+          description: "Время возникновения ошибки"
+          example: "2026-05-27T12:00:00"
+        status:
+          type: "integer"
+          format: "int32"
+          description: "HTTP-статус ошибки"
+          example: 404
+        error:
+          type: "string"
+          description: "Текст ошибки"
+          example: "Product not found with id: 99"
+
+    ValidationErrorResponse:
+      description: "Ответ с ошибками валидации полей."
+      type: "object"
+      properties:
+        timestamp:
+          type: "string"
+          format: "date-time"
+          description: "Время возникновения ошибки"
+          example: "2026-05-27T12:00:00"
+        status:
+          type: "integer"
+          format: "int32"
+          description: "HTTP-статус (всегда 400)"
+          example: 400
+        errors:
+          type: "object"
+          description: "Карта ошибок валидации: поле → сообщение"
+          additionalProperties:
+            type: "string"
+          example:
+            name: "Name is required"
+            price: "Price must be positive or zero"
+
+tags:
+  - name: "Товары (Products)"
+    description: "Управление товарами: CRUD-операции с каталогом товаров"
